@@ -3,7 +3,6 @@ package handler;
 import initializer.UpstreamChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -13,41 +12,18 @@ import org.slf4j.LoggerFactory;
 import util.Route;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private static final Logger log = LoggerFactory.getLogger(ForwardHandler.class);
 
-    private static final List<Route> ROUTES = List.of(
-            new Route("/api/order", "localhost", 8081),
-            new Route("/api/product", "localhost", 8082)
-    );
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        QueryStringDecoder decoder = new QueryStringDecoder(req.uri());
-        String path = decoder.path();
+        Route route = ctx.channel().attr(RouterHandler.ROUTE_KEY).get();
+        String apiPath = ctx.channel().attr(RouterHandler.REWRITTEN_URI_KEY).get();
 
-        // current routes are hardcoded for initial test purposes
-        // TODO: configure routes in a YAML file
-        ROUTES.stream()
-                .filter(r -> path.startsWith(r.prefix()))
-                .findFirst()
-                .ifPresentOrElse(route -> {
-                            String apiPath = path.substring(route.prefix().length());
-                            if (apiPath.isEmpty()) apiPath = "/";
-                            forwardRequest(route.host(), route.port(), apiPath, req, ctx);
-                        },
-                        // handle bad gateway
-                        () -> {
-                            FullHttpResponse response = new DefaultFullHttpResponse(
-                                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
-                            );
-                            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-                        }
-                );
-
+        forwardRequest(route.host(), route.port(), apiPath, req, ctx);
     }
 
     @Override
@@ -67,6 +43,8 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
             // if the target api connected successfully, send the request. Else, return BAD_GATEWAY HTTP status
             // to the original client
             if (future.isSuccess()) {
+                // the original request object is immutable, so we need to copy it and
+                // set the new uri
                 DefaultFullHttpRequest forwardRequest = new DefaultFullHttpRequest(
                         req.protocolVersion(),
                         req.method(),
@@ -82,6 +60,7 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 
                 future.channel().writeAndFlush(forwardRequest);
             } else {
+                // handle bad gateway
                 ctx.writeAndFlush(new DefaultHttpResponse(
                                 HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
                         )

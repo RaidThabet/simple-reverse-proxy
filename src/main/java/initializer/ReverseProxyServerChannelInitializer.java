@@ -1,6 +1,7 @@
 package initializer;
 
 import handler.ForwardHandler;
+import handler.RouterHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -13,6 +14,7 @@ public class ReverseProxyServerChannelInitializer extends ChannelInitializer<Soc
         ch.pipeline().addLast(
                 new HttpServerCodec(),
                 new HttpObjectAggregator(65536),
+                new RouterHandler(),
                 new ForwardHandler()
         );
     }
