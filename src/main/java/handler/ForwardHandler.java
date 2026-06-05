@@ -1,13 +1,17 @@
+package handler;
+
+import initializer.UpstreamChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
@@ -58,16 +62,8 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(ctx.channel().eventLoop())
                 .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(
-                                new HttpClientCodec(),
-                                new HttpObjectAggregator(65536),
-                                new UpstreamHandler(ctx.channel())
-                        );
-                    }
-                });
+                .handler(new UpstreamChannelInitializer(ctx.channel()));
+
         bootstrap.connect(host, port).addListener((ChannelFuture future) -> {
             // if the target api connected successfully, send the request. Else, return BAD_GATEWAY HTTP status
             // to the original client

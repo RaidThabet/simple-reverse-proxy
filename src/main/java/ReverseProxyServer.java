@@ -1,3 +1,4 @@
+import initializer.ReverseProxyServerChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -25,7 +26,7 @@ public class ReverseProxyServer {
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childHandler(new ReverseProxyServerChannelInitializer());
 
-            ChannelFuture bindFuture = bootstrap.bind(8080).sync();
+            ChannelFuture bindFuture = bootstrap.bind(port).sync();
             log.info("Server listening on port 8080");
             bindFuture.channel().closeFuture().sync();
         } finally {
