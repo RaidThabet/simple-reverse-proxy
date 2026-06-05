@@ -11,13 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.ConfigLoader;
 
-import java.io.IOException;
-
 public class ReverseProxyServer {
 
     private static final Logger log = LoggerFactory.getLogger(ReverseProxyServer.class);
 
-    static void main() throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException {
 
         ProxyConfig config = ConfigLoader.load("config.yaml");
 
