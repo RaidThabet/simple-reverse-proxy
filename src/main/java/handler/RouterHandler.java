@@ -43,7 +43,7 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                         // handle bad gateway
                         () -> {
                             FullHttpResponse response = new DefaultFullHttpResponse(
-                                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
+                                    HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND
                             );
                             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
                         }
