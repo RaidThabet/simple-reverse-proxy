@@ -1,6 +1,8 @@
 package initializer;
 
+import config.ProxyConfig;
 import handler.ForwardHandler;
+import handler.RateLimitHandler;
 import handler.RouterHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -13,7 +15,9 @@ import java.util.List;
 
 public class ReverseProxyServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final List<Route> routes = ConfigLoader.get().getRoutes().stream()
+    private final ProxyConfig config = ConfigLoader.get();
+
+    private final List<Route> routes = config.getRoutes().stream()
             .map(r -> new Route(
                     r.getPrefix(),
                     r.getUpstream().getHost(),
@@ -21,11 +25,16 @@ public class ReverseProxyServerChannelInitializer extends ChannelInitializer<Soc
             ))
             .toList();
 
+    private final int maxTokens = config.getServer().getRatelimit().getMaxTokens();
+
+    private final int refillRatePerSecond = config.getServer().getRatelimit().getRefillRatePerSecond();
+
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ch.pipeline().addLast(
                 new HttpServerCodec(),
                 new HttpObjectAggregator(65536),
+                new RateLimitHandler(maxTokens, refillRatePerSecond),
                 new RouterHandler(routes),
                 new ForwardHandler()
         );

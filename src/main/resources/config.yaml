@@ -1,5 +1,8 @@
 server:
   port: 8080
+  ratelimit:
+    maxTokens: 20
+    refillRatePerSecond: 20
 
 routes:
   - prefix: /api/order
