@@ -10,12 +10,19 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.Route;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private static final Logger log = LoggerFactory.getLogger(ForwardHandler.class);
+
+    private static final List<Route> ROUTES = List.of(
+            new Route("/api/order", "localhost", 8081),
+            new Route("/api/product", "localhost", 8082)
+    );
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
@@ -24,31 +31,23 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 
         // current routes are hardcoded for initial test purposes
         // TODO: configure routes in a YAML file
-        if (path.startsWith("/api/order")) {
-            // forward the request to order rest api
-            String host = "localhost";
-            int port = 8081;
-            String apiPath = path.substring(10);
-            if (apiPath.isEmpty()) apiPath = "/";
-            forwardRequest(host, port, apiPath, req, ctx);
-            return;
-        }
+        ROUTES.stream()
+                .filter(r -> path.startsWith(r.prefix()))
+                .findFirst()
+                .ifPresentOrElse(route -> {
+                            String apiPath = path.substring(route.prefix().length());
+                            if (apiPath.isEmpty()) apiPath = "/";
+                            forwardRequest(route.host(), route.port(), apiPath, req, ctx);
+                        },
+                        // handle bad gateway
+                        () -> {
+                            FullHttpResponse response = new DefaultFullHttpResponse(
+                                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
+                            );
+                            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+                        }
+                );
 
-        if (path.startsWith("/api/product")) {
-            // forward the request to product rest api
-            String host = "localhost";
-            int port = 8082;
-            String apiPath = path.substring(12);
-            if (apiPath.isEmpty()) apiPath = "/";
-            forwardRequest(host, port, apiPath, req, ctx);
-            return;
-        }
-
-        // handle bad gateway
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
-        );
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override
