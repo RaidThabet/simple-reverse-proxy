@@ -11,15 +11,14 @@ import java.util.List;
 
 public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
+    private final List<Route> routes;
+
     public static final AttributeKey<Route> ROUTE_KEY = AttributeKey.valueOf("route");
     public static final AttributeKey<String> REWRITTEN_URI_KEY = AttributeKey.valueOf("rewrittenUri");
 
-    // current routes are hardcoded for initial test purposes
-    // TODO: configure routes in a YAML config file
-    private static final List<Route> ROUTES = List.of(
-            new Route("/api/order", "localhost", 8081),
-            new Route("/api/product", "localhost", 8082)
-    );
+    public RouterHandler(List<Route> routes) {
+        this.routes = routes;
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
@@ -28,7 +27,7 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
         QueryStringDecoder decoder = new QueryStringDecoder(req.uri());
         String path = decoder.path();
 
-        ROUTES.stream()
+        routes.stream()
                 .filter(r -> path.startsWith(r.prefix()))
                 .findFirst()
                 .ifPresentOrElse(route -> {

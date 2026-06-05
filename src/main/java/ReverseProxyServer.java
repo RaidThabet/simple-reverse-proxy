@@ -1,3 +1,4 @@
+import config.ProxyConfig;
 import initializer.ReverseProxyServerChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -8,13 +9,19 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.ConfigLoader;
+
+import java.io.IOException;
 
 public class ReverseProxyServer {
 
     private static final Logger log = LoggerFactory.getLogger(ReverseProxyServer.class);
 
-    static void main() throws InterruptedException {
-        int port = 8080;
+    static void main() throws InterruptedException, IOException {
+
+        ProxyConfig config = ConfigLoader.load("config.yaml");
+
+        int port = config.getServer().getPort();
 
         EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 

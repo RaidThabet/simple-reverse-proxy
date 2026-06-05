@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+routes:
+  - prefix: /api/order
+    upstream:
+      host: localhost
+      port: 8081
+  - prefix: /api/product
+    upstream:
+      host: localhost
+      port: 8082
