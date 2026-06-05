@@ -34,7 +34,7 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                             String apiPath = path.substring(route.prefix().length());
                             if (apiPath.isEmpty()) apiPath = "/";
 
-                            // store on channel for the forward handler
+                            // store on channel for the forward handler to read
                             ctx.channel().attr(ROUTE_KEY).set(route);
                             ctx.channel().attr(REWRITTEN_URI_KEY).set(apiPath);
 

@@ -54,7 +54,10 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
 
                 // copy headers
                 forwardRequest.headers().set(req.headers());
+
                 forwardRequest.headers().set(HttpHeaderNames.HOST, host + ":" + port);
+
+                // add the client ip in the X-Forwarded-For header
                 String clientIp = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
                 forwardRequest.headers().set("X-Forwarded-For", clientIp);
 

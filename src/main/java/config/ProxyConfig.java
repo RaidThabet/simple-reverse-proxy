@@ -2,6 +2,7 @@ package config;
 
 import java.util.List;
 
+// class that represents the YAML configuration file
 public class ProxyConfig {
 
     private ServerConfig server;

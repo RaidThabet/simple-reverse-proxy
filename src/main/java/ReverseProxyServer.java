@@ -34,7 +34,7 @@ public class ReverseProxyServer {
                     .childHandler(new ReverseProxyServerChannelInitializer());
 
             ChannelFuture bindFuture = bootstrap.bind(port).sync();
-            log.info("Server listening on port 8080");
+            log.info("Server listening on port {}", port);
             bindFuture.channel().closeFuture().sync();
         } finally {
             group.shutdownGracefully().sync();
