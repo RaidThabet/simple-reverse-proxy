@@ -2,10 +2,7 @@ package handler;
 
 import initializer.UpstreamChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
@@ -38,6 +35,7 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(ctx.channel().eventLoop())
                 .channel(NioSocketChannel.class)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
                 .handler(new UpstreamChannelInitializer(ctx.channel()));
 
         bootstrap.connect(host, port).addListener((ChannelFuture future) -> {

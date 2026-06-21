@@ -1,9 +1,14 @@
 package handler;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.timeout.ReadTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +29,14 @@ public class UpstreamHandler extends SimpleChannelInboundHandler<FullHttpRespons
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("Error occured: ", cause);
+        if (cause instanceof ReadTimeoutException) {
+            log.error("Upstream read timed out", cause);
+            channel.writeAndFlush(new DefaultFullHttpResponse(
+                    HttpVersion.HTTP_1_1, HttpResponseStatus.GATEWAY_TIMEOUT
+            )).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            log.error("Error occured: ", cause);
+        }
         ctx.close();
     }
 }
