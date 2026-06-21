@@ -69,7 +69,7 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
             } else {
                 // handle bad gateway
                 future.channel().close(); // close upstream connection
-                ctx.writeAndFlush(new DefaultHttpResponse(
+                ctx.writeAndFlush(new DefaultFullHttpResponse(
                                 HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
                         )
                 ).addListener(ChannelFutureListener.CLOSE); // close client connection
