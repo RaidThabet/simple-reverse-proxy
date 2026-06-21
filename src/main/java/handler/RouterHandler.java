@@ -22,7 +22,6 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
-        req.retain();
 
         QueryStringDecoder decoder = new QueryStringDecoder(req.uri());
         String path = decoder.path();
@@ -31,6 +30,8 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                 .filter(r -> path.startsWith(r.prefix()))
                 .findFirst()
                 .ifPresentOrElse(route -> {
+                            req.retain();
+
                             String apiPath = path.substring(route.prefix().length());
                             if (apiPath.isEmpty()) apiPath = "/";
 
