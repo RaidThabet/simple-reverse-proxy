@@ -3,6 +3,7 @@ package handler;
 import initializer.UpstreamChannelInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -62,12 +63,16 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
                 forwardRequest.headers().set("X-Forwarded-For", clientIp);
 
                 future.channel().writeAndFlush(forwardRequest);
+
+                // if client disconnects before upstream responds, close upstream channel
+                ctx.channel().closeFuture().addListener(f -> future.channel().close());
             } else {
                 // handle bad gateway
+                future.channel().close(); // close upstream connection
                 ctx.writeAndFlush(new DefaultHttpResponse(
                                 HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_GATEWAY
                         )
-                );
+                ).addListener(ChannelFutureListener.CLOSE); // close client connection
             }
             req.release();
         });

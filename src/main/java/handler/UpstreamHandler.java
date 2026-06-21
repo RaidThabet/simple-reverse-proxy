@@ -19,7 +19,7 @@ public class UpstreamHandler extends SimpleChannelInboundHandler<FullHttpRespons
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
-        channel.writeAndFlush(msg.retain());
+        channel.writeAndFlush(msg.retain()).addListener(f -> ctx.close());
     }
 
     @Override

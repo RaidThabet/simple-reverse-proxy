@@ -1,5 +1,6 @@
 package handler;
 
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -40,7 +41,7 @@ public class RateLimitHandler extends ChannelInboundHandlerAdapter {
                     HttpResponseStatus.TOO_MANY_REQUESTS
             );
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
-            ctx.writeAndFlush(response);
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
     }
 }
