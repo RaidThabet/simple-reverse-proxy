@@ -7,6 +7,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.ReferenceCountUtil;
 import ratelimit.TokenBucket;
 
 import java.net.InetSocketAddress;
@@ -36,6 +37,7 @@ public class RateLimitHandler extends ChannelInboundHandlerAdapter {
         if (bucket.tryConsume()) {
             ctx.fireChannelRead(msg); // allowed -> pass to RouterHandler
         } else {
+            ReferenceCountUtil.release(msg);
             DefaultFullHttpResponse response = new DefaultFullHttpResponse(
                     HttpVersion.HTTP_1_1,
                     HttpResponseStatus.TOO_MANY_REQUESTS
