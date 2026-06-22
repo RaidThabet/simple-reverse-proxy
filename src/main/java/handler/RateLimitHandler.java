@@ -1,5 +1,7 @@
 package handler;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -13,13 +15,19 @@ import org.slf4j.LoggerFactory;
 import ratelimit.TokenBucket;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class RateLimitHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitHandler.class);
-    private static final ConcurrentHashMap<String, TokenBucket> buckets = new ConcurrentHashMap<>();
+
+    private static final Cache<String, TokenBucket> buckets = Caffeine.newBuilder()
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .maximumSize(10000)
+            .build();
+
     private final int maxTokens;
+
     private final int refillRatePerSecond;
 
     public RateLimitHandler(int maxTokens, int refillRatePerSecond) {
@@ -32,7 +40,7 @@ public class RateLimitHandler extends ChannelInboundHandlerAdapter {
         String clientIp = ((InetSocketAddress) ctx.channel().remoteAddress())
                 .getAddress().getHostAddress();
 
-        TokenBucket bucket = buckets.computeIfAbsent(
+        TokenBucket bucket = buckets.get(
                 clientIp,
                 ip -> new TokenBucket(maxTokens, refillRatePerSecond)
         );
