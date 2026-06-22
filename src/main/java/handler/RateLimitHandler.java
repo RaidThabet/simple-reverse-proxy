@@ -8,6 +8,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ratelimit.TokenBucket;
 
 import java.net.InetSocketAddress;
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RateLimitHandler extends ChannelInboundHandlerAdapter {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimitHandler.class);
     private static final ConcurrentHashMap<String, TokenBucket> buckets = new ConcurrentHashMap<>();
     private final int maxTokens;
     private final int refillRatePerSecond;
@@ -45,5 +48,13 @@ public class RateLimitHandler extends ChannelInboundHandlerAdapter {
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("RateLimitHandler error: ", cause);
+        ctx.writeAndFlush(new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR
+        )).addListener(ChannelFutureListener.CLOSE);
     }
 }

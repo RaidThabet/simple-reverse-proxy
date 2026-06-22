@@ -25,6 +25,14 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
     }
 
     @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("ForwardHandler error: ", cause);
+        ctx.writeAndFlush(new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR
+        )).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         log.info("Client connected: {}", ctx.channel().remoteAddress());
     }
@@ -75,4 +83,5 @@ public class ForwardHandler extends SimpleChannelInboundHandler<FullHttpRequest>
             req.release();
         });
     }
+    
 }

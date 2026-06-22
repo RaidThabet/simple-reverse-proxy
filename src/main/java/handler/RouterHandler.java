@@ -5,11 +5,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AttributeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import util.Route;
 
 import java.util.List;
 
 public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+
+    private static final Logger log = LoggerFactory.getLogger(RouterHandler.class);
 
     private final List<Route> routes;
 
@@ -18,6 +22,14 @@ public class RouterHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 
     public RouterHandler(List<Route> routes) {
         this.routes = routes;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("RouterHandler error: ", cause);
+        ctx.writeAndFlush(new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR
+        )).addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override
